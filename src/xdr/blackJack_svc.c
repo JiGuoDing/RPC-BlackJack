@@ -17,7 +17,7 @@
 #define SIG_PF void (*)(int)
 #endif
 
-Card* Init2Cards();
+void Init2Cards(GameStatus*);
 u_short CalPoints(Card*, u_int);
 Card* Gen1Card();
 void OneMoreCard(GameStatus*, int);
@@ -30,6 +30,8 @@ const Card CARDS[] = {
     { "J", 10 }, { "Q", 10 }, { "K", 10 },
     { "A", 1 }
 };
+
+static GameStatus gameStatus;
 
 static void
 blackjackprogram_1(struct svc_req* rqstp, register SVCXPRT* transp)
@@ -114,6 +116,7 @@ int main(int argc, char** argv)
     printf("tcp_svc registed");
 
     printf("server booting...");
+
     svc_run();
     fprintf(stderr, "%s", "svc_run returned");
     exit(1);
@@ -124,53 +127,59 @@ int main(int argc, char** argv)
 GameStatus* startgame_1_svc(void* any, struct svc_req* rep)
 {
     // 初始化内存
-    GameStatus* gameStatus = (GameStatus*)calloc(1, sizeof(GameStatus));
-    if (gameStatus == NULL) {
-        // 内存分配失败
-        printf("Memory for gameStatus allocation failed\n");
-        return NULL;
-    }
-    gameStatus->msg = (char*)calloc(750, sizeof(char));
-    strcat(gameStatus->msg, "\n**********Game starts**********\n");
+    // GameStatus gameStatus = (GameStatus*)calloc(1, sizeof(GameStatus));
+
+    // if (gameStatus == NULL) {
+    //     // 内存分配失败
+    //     printf("Memory for gameStatus allocation failed\n");
+    //     return NULL;
+    // }
+    gameStatus.msg = (char*)calloc(750, sizeof(char));
+    strcat(gameStatus.msg, "\n**********Game starts**********\n");
 
     // 绑定玩家id
-    gameStatus->dealer.id = 0;
-    gameStatus->player.id = 1;
+    gameStatus.dealer.id = 0;
+    gameStatus.player.id = 1;
 
     // 初始化随机数种子
     srand(time(NULL));
 
     // 为玩家和庄家分别发两张牌
-    gameStatus->player.cards.cards_val = Init2Cards();
-    gameStatus->player.cards.cards_len = 2;
-    strcat(gameStatus->msg, "\nDealer gets initial 2 cards\n");
-    gameStatus->dealer.cards.cards_val = Init2Cards();
-    gameStatus->dealer.cards.cards_len = 2;
-    strcat(gameStatus->msg, "\nPlayer gets initial 2 cards\n");
+    Init2Cards(&gameStatus);
+    gameStatus.player.cards.cards_len = 2;
+    strcat(gameStatus.msg, "\nDealer gets initial 2 cards\n");
+    gameStatus.dealer.cards.cards_len = 2;
+    strcat(gameStatus.msg, "\nPlayer gets initial 2 cards\n");
 
-    gameStatus->currentPointsOfPlayer = CalPoints(gameStatus->player.cards.cards_val, gameStatus->player.cards.cards_len);
-    gameStatus->currentPointsOfDealer = CalPoints(gameStatus->dealer.cards.cards_val, gameStatus->dealer.cards.cards_len);
+    // char numStr[10];
+    // snprintf(numStr, sizeof(numStr), "%d", gameStatus->player.cards.cards_len);
+    // strcat(gameStatus->msg, "\n");
+    // strcat(gameStatus->msg, numStr);
+    // strcat(gameStatus->msg, "\n");
 
-    return gameStatus;
+    gameStatus.currentPointsOfPlayer = CalPoints(gameStatus.player.cards.cards_val, gameStatus.player.cards.cards_len);
+    gameStatus.currentPointsOfDealer = CalPoints(gameStatus.dealer.cards.cards_val, gameStatus.dealer.cards.cards_len);
+
+    return &gameStatus;
 }
 
 // 发一张牌
 GameStatus* hitonecard_1_svc(HitRequest* hreq, struct svc_req* req)
 {
-    OneMoreCard(hreq->gameStatus, hreq->id);
+    OneMoreCard(&gameStatus, hreq->id);
     switch (hreq->id) {
     case 0: {
-        strcat(hreq->gameStatus->msg, "\n Dealer hit one more card.\n");
+        strcat(gameStatus.msg, "\n Dealer hit one more card.\n");
         break;
     }
     case 1: {
-        strcat(hreq->gameStatus->msg, "\n Player hit one more card.\n");
+        strcat(gameStatus.msg, "\n Player hit one more card.\n");
         break;
     }
     default:
         break;
     }
-    return hreq->gameStatus;
+    return &gameStatus;
 }
 
 // 结算游戏
@@ -187,7 +196,7 @@ GameResult* gameover_1_svc(GameStatus* status, struct svc_req* req)
     free(status->dealer.cards.cards_val);
     free(status->player.cards.cards_val);
     // 释放游戏状态内存
-    free(status);
+    // free(status);
 
     if (result->finalPointsOfDealer > 21) {
         result->result = "Player wins";
@@ -207,20 +216,21 @@ GameResult* gameover_1_svc(GameStatus* status, struct svc_req* req)
 }
 
 // 初始发两张牌
-Card* Init2Cards()
+void Init2Cards(GameStatus* gameStatus)
 {
     // 分配20张牌的内存，最多20张牌
-    Card* twoCards = (Card*)calloc(20, sizeof(Card));
-    if (twoCards == NULL) {
+    gameStatus->player.cards.cards_val = (Card*)calloc(20, sizeof(Card));
+    gameStatus->dealer.cards.cards_val = (Card*)calloc(20, sizeof(Card));
+    if (gameStatus->player.cards.cards_val == NULL || gameStatus->dealer.cards.cards_val == NULL) {
         // 内存分配失败
         printf("Memory for initial cards allocation failed\n");
-        return NULL;
+        strcat(gameStatus->msg, "\nMemory for initial cards allocation failed\n");
     }
     // 随机生成两张牌
-    twoCards[0] = CARDS[rand() % 13];
-    twoCards[1] = CARDS[rand() % 13];
-
-    return twoCards;
+    gameStatus->dealer.cards.cards_val[0] = CARDS[rand() % 13];
+    gameStatus->dealer.cards.cards_val[1] = CARDS[rand() % 13];
+    gameStatus->player.cards.cards_val[0] = CARDS[rand() % 13];
+    gameStatus->player.cards.cards_val[1] = CARDS[rand() % 13];
 }
 
 // 计算手牌点数
@@ -239,7 +249,9 @@ void OneMoreCard(GameStatus* status, int id)
     switch (id) {
     case 1: {
         // 手牌添加一张
-        status->player.cards.cards_val[status->player.cards.cards_len++] = CARDS[rand() % 13];
+        status->player.cards.cards_val = realloc(status->player.cards.cards_val, 20 * sizeof(Card));
+        status->player.cards.cards_val[status->player.cards.cards_len] = CARDS[rand() % 13];
+        status->player.cards.cards_len++;
         break;
     }
 

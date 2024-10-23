@@ -19,7 +19,7 @@ int main()
         exit(1);
     }
 
-    char* ready = (char*)malloc(10 * sizeof(char));
+    char* ready = (char*)calloc(10, sizeof(char));
     printf("Ready?(y/n):");
     scanf("%s", ready);
     printf("\n");
@@ -39,23 +39,21 @@ int main()
     printf("\nPlayer's first card is %s\n", status->player.cards.cards_val[0].face);
     printf("\nPlayer's second card is %s\n", status->player.cards.cards_val[1].face);
 
-    HitRequest* hreq = NULL;
+    HitRequest hreq;
+    hreq.gameStatus = status;
     while (TRUE) {
         // 玩家回合
         // 定义一个发牌请求（包括游戏状态和玩家id）
-        if (hreq == NULL)
-            hreq = (HitRequest*)calloc(1, sizeof(HitRequest));
-        hreq->gameStatus = status;
         char* choice = (char*)calloc(10, sizeof(char));
         printf("\nPlease choose to hit one more card or stand(h/s): ");
         scanf("%s", choice);
+        // printf(status->msg);
         // 选择再发一张牌
         if (strcmp(_2Lower(choice), "h") == 0) {
-            hreq->id = 1;
-            status = hitonecard_1(hreq, clnt);
+            hreq.id = 1;
+            status = hitonecard_1(&hreq, clnt);
             if (status == NULL) {
                 printf("\nSERVER ERROR! failed to hit new card.\n");
-                free(hreq);
                 break;
             }
             // free(hreq);
@@ -70,6 +68,7 @@ int main()
 
     // 释放客户端内存
     free(clnt);
+    printf("\n**********Game Over**********\n");
 
     return 0;
 }
