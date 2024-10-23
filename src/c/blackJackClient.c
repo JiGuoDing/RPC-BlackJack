@@ -41,6 +41,7 @@ int main()
 
     HitRequest hreq;
     hreq.gameStatus = status;
+    hreq.id = 1;
     while (TRUE) {
         // 玩家回合
         // 定义一个发牌请求（包括游戏状态和玩家id）
@@ -50,21 +51,35 @@ int main()
         // printf(status->msg);
         // 选择再发一张牌
         if (strcmp(_2Lower(choice), "h") == 0) {
-            hreq.id = 1;
             status = hitonecard_1(&hreq, clnt);
             if (status == NULL) {
                 printf("\nSERVER ERROR! failed to hit new card.\n");
+                free(choice);
                 break;
             }
-            // free(hreq);
             printf("\nyour new card is: %s\n", status->player.cards.cards_val[status->player.cards.cards_len - 1].face);
-        } else if (strcmp(_2Lower(choice), "s") == 0)
+        } else if (strcmp(_2Lower(choice), "s") == 0) {
+            free(choice);
             break;
-        else
-            continue;
+        } else
+            free(choice);
+        // 如果手牌数 >= 20，强制进入庄家回合
+        if (status->dealer.cards.cards_len >= 20)
+            break;
     }
 
-    // 庄家回合
+    hreq.gameStatus = status;
+    hreq.id = 0;
+    while (TRUE) {
+        // 庄家回合
+        // 手牌点数小于17，强制发牌
+        if (status->currentPointsOfDealer < 17)
+            status = hitonecard_1(&hreq, clnt);
+        if (status == NULL) {
+            printf("\nSERVER ERROR! failed to hit new card.\n");
+            break;
+        }
+    }
 
     // 释放客户端内存
     free(clnt);

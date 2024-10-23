@@ -249,14 +249,17 @@ void OneMoreCard(GameStatus* status, int id)
     switch (id) {
     case 1: {
         // 手牌添加一张
-        status->player.cards.cards_val = realloc(status->player.cards.cards_val, 20 * sizeof(Card));
-        status->player.cards.cards_val[status->player.cards.cards_len] = CARDS[rand() % 13];
-        status->player.cards.cards_len++;
+        status->player.cards.cards_val[status->player.cards.cards_len++] = CARDS[rand() % 13];
+        // 更新点数
+        status->currentPointsOfPlayer += status->player.cards.cards_val[status->player.cards.cards_len - 1].point;
         break;
     }
 
     case 0: {
-
+        // 手牌添加一张
+        status->dealer.cards.cards_val[status->player.cards.cards_len++] = CARDS[rand() % 13];
+        // 更新点数
+        status->currentPointsOfDealer += status->dealer.cards.cards_val[status->dealer.cards.cards_len - 1].point;
         break;
     }
 
