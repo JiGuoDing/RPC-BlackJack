@@ -257,7 +257,7 @@ void OneMoreCard(GameStatus* status, int id)
 
     case 0: {
         // 手牌添加一张
-        status->dealer.cards.cards_val[status->player.cards.cards_len++] = CARDS[rand() % 13];
+        status->dealer.cards.cards_val[status->dealer.cards.cards_len++] = CARDS[rand() % 13];
         // 更新点数
         status->currentPointsOfDealer += status->dealer.cards.cards_val[status->dealer.cards.cards_len - 1].point;
         break;
