@@ -1,7 +1,7 @@
 # Makefile for BlackJack
 
 CC = gcc
-CFLAGS = -g -fsanitize=address
+# CFLAGS = -g -fsanitize=address
 LDFLAGS = -lnsl
 CLIENT_SRC = ./src/xdr/blackJack_clnt.c ./src/c/blackJackClient.c ./src/xdr/blackJack_xdr.c
 SERVER_SRC = ./src/xdr/blackJack_svc.c ./src/xdr/blackJack_xdr.c
