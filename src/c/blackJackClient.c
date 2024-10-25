@@ -5,6 +5,7 @@
 #include <rpc/types.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 
 // 定义颜色代码
 const char* red = "\033[31m";
@@ -13,7 +14,7 @@ const char* yellow = "\033[33m";
 const char* blue = "\033[34m";
 const char* reset = "\033[0m";
 
-const char* COLORSET[] = { "\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[0m" };
+const char* COLORSET[] = { "\033[31m", "\033[32m", "\033[33m", "\033[34m" };
 
 // 字母转小写
 char* _2Lower(char*);
@@ -45,7 +46,7 @@ int main(int argc, char* argv[])
     }
 
     char* ready = (char*)calloc(10, sizeof(char));
-    printfY("Ready?(y/n):");
+    printfY("\nReady?(y/n):");
     scanf("%s", ready);
     printf("\n");
 
@@ -67,11 +68,24 @@ int main(int argc, char* argv[])
     }
     // 游戏状态变量
     GameStatus status = *statusPtr;
+    // 休眠时间，让系统反应速度更自然
+    struct timespec slp = {
+        0, // 秒
+        5e8, // 纳秒
+    };
+    struct timespec shortSlp = {
+        0, // 秒
+        1e8, // 纳秒
+    };
 
-    printfY("\n**********game starts**********\n");
+    printfY("\n**********GAME ON!**********\n");
+    nanosleep(&slp, NULL);
     printfB("\nDealer's first card is %s\n", status.dealer.cards.cards_val[0].face);
+    nanosleep(&slp, NULL);
     printfG("\nPlayer's first card is %s\n", status.player.cards.cards_val[0].face);
-    printfG("\nPlayer's second card is %s%s\n", status.player.cards.cards_val[1].face);
+    nanosleep(&slp, NULL);
+    printfG("\nPlayer's second card is %s%s\n", status.player.cards.cards_val[1].face, reset);
+    nanosleep(&slp, NULL);
 
     // 定义一个发牌请求（包括游戏状态和玩家id）
     HitRequest hreq;
@@ -79,11 +93,16 @@ int main(int argc, char* argv[])
     hreq.id = 1;
     char* choice = (char*)calloc(10, sizeof(char));
     printfG("\nNow it's your turn!\n");
+    nanosleep(&slp, NULL);
+    printfG("\nNow your current points: %d\n", status.currentPointsOfPlayer);
+    nanosleep(&slp, NULL);
     while (!gameIsOver) {
 
         // 展示玩家手牌
-        showCards(status.player);
-        printfG("\nNow your current points is: %d\n", status.currentPointsOfPlayer);
+        // showCards(status.player);
+        // nanosleep(&slp, NULL);
+        // printfG("\nNow your current points is: %d\n", status.currentPointsOfPlayer);
+        // nanosleep(&slp, NULL);
 
         // 玩家回合
         printfY("\nPlease choose to hit one more card or stand(h/s): ");
@@ -94,6 +113,7 @@ int main(int argc, char* argv[])
             statusPtr = hitonecard_1(&hreq, clnt);
             if (statusPtr == NULL) {
                 printfR("\nSERVER ERROR! failed to hit new card.\n");
+                nanosleep(&slp, NULL);
                 // 服务器崩溃，游戏结束
                 gameIsOver = TRUE;
                 free(choice);
@@ -101,6 +121,7 @@ int main(int argc, char* argv[])
             }
             status = *statusPtr;
             printfG("\nyour new card is: %s\n", status.player.cards.cards_val[status.player.cards.cards_len - 1].face);
+            nanosleep(&slp, NULL);
         } else if (strcmp(_2Lower(choice), "s") == 0) {
             free(choice);
             break;
@@ -108,12 +129,15 @@ int main(int argc, char* argv[])
 
         // 展示玩家的手牌
         showCards(status.player);
-        printfG("\nNow your current points is: %d\n", status.currentPointsOfPlayer);
+        nanosleep(&slp, NULL);
+        printfG("\nNow your current points: %d\n", status.currentPointsOfPlayer);
+        nanosleep(&slp, NULL);
 
         // 如果手牌数 >= 20，强制进入庄家回合
         if (status.player.cards.cards_len >= 20) {
             free(choice);
             printfY("\nYour cards have reached the limit number!\n");
+            nanosleep(&slp, NULL);
             break;
         }
 
@@ -122,15 +146,20 @@ int main(int argc, char* argv[])
             gameIsOver = TRUE;
             free(choice);
             printfY("\nYou bust with points of: %d\n", status.currentPointsOfPlayer);
+            nanosleep(&slp, NULL);
             printfY("\nYou have *LOST* the game\n");
+            nanosleep(&slp, NULL);
             break;
         }
     }
 
     if (!gameIsOver) {
         printfY("\nYour turn is over!\n");
+        nanosleep(&slp, NULL);
         printfY("\nNow it's dealer's turn!\n");
+        nanosleep(&slp, NULL);
         printfB("\ndealer's another card is: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
+        nanosleep(&slp, NULL);
         hreq.gameStatus = &status;
         hreq.id = 0;
     }
@@ -142,11 +171,14 @@ int main(int argc, char* argv[])
             statusPtr = hitonecard_1(&hreq, clnt);
             if (statusPtr == NULL) {
                 printfR("\nSERVER ERROR! failed to hit new card.\n");
+                nanosleep(&slp, NULL);
+                gameIsOver = TRUE;
                 // 服务器崩溃，游戏结束
                 break;
             }
             status = *statusPtr;
             printfB("\ndealer hit a new card: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
+            nanosleep(&slp, NULL);
         } else if (status.currentPointsOfDealer >= 17 && status.currentPointsOfDealer <= 21) {
             // TODO 庄家的逻辑
             break;
@@ -155,23 +187,47 @@ int main(int argc, char* argv[])
 
         // 展示庄家的手牌
         printfB("\nNow dealer's cards are: ");
-        for (int i = 0; i < status.dealer.cards.cards_len; i++)
-            printfB("%s ", status.dealer.cards.cards_val[i].face);
-        printf("\n");
+        for (int i = 0; i < status.dealer.cards.cards_len; i++) {
+            nanosleep(&shortSlp, NULL);
+            printf("%s%s ", COLORSET[(i + 1) % 4], status.dealer.cards.cards_val[i].face);
+        }
+        printf("%s\n", reset);
+        nanosleep(&slp, NULL);
 
         // 玩家手牌点数大于21，玩家输
         if (status.currentPointsOfDealer > 21) {
             gameIsOver = TRUE;
             printfY("\nDealer busts with points of: %d\n", status.currentPointsOfDealer);
+            nanosleep(&slp, NULL);
             printfY("\nYou have *WON* the game with points of %d\n", status.currentPointsOfPlayer);
+            nanosleep(&slp, NULL);
             break;
         }
+    }
+
+    printfY("\nDealer's turn is over!\n");
+
+    // 玩家和庄家点数均未超过21
+    if (!gameIsOver) {
+        printfY("\n**********COMPARE POINTS**********\n");
+        nanosleep(&slp, NULL);
+        printfY("\n  Your points:     %d\n", status.currentPointsOfPlayer);
+        nanosleep(&slp, NULL);
+        printfY("\n  Dealer's points: %d\n", status.currentPointsOfDealer);
+        nanosleep(&slp, NULL);
+        if (status.currentPointsOfPlayer > status.currentPointsOfDealer)
+            printfY("\nYou have *WON* the game by a %d-point margin\n", status.currentPointsOfPlayer - status.currentPointsOfDealer);
+        else if (status.currentPointsOfPlayer < status.currentPointsOfDealer)
+            printfY("\nYou have *LOST* the game by a %d-point margin\n", status.currentPointsOfDealer - status.currentPointsOfPlayer);
+        else
+            printfY("\n*Tie Game*, Both are WINNERS!\n");
     }
 
     // 释放分配的内存
     free(clnt);
     // free(statusPtr);
-    printfY("\n**********Game Over**********\n");
+    nanosleep(&slp, NULL);
+    printfY("\n**********GAME OVER!**********\n");
 
     return 0;
 }
@@ -185,10 +241,10 @@ char* _2Lower(char* str)
 
 void showCards(Player player)
 {
-    printf("\nNow your cards are: ");
+    printfG("\nNow your cards are: ");
     for (int i = 0; i < player.cards.cards_len; i++)
-        printf("%s ", player.cards.cards_val[i].face);
-    printf("\n");
+        printf("%s%s ", COLORSET[(i + 1) % 4], player.cards.cards_val[i].face);
+    printf("\n%s", reset);
 }
 
 // 输出黄色文本
