@@ -16,6 +16,16 @@ const char* reset = "\033[0m";
 
 const char* COLORSET[] = { "\033[31m", "\033[32m", "\033[33m", "\033[34m" };
 
+// 休眠时间，让系统反应速度更自然
+const struct timespec slp = {
+    0, // 秒
+    5e8, // 纳秒
+};
+const struct timespec shortSlp = {
+    0, // 秒
+    3e8, // 纳秒
+};
+
 // 字母转小写
 char* _2Lower(char*);
 // 展示手牌
@@ -68,15 +78,6 @@ int main(int argc, char* argv[])
     }
     // 游戏状态变量
     GameStatus status = *statusPtr;
-    // 休眠时间，让系统反应速度更自然
-    struct timespec slp = {
-        0, // 秒
-        5e8, // 纳秒
-    };
-    struct timespec shortSlp = {
-        0, // 秒
-        1e8, // 纳秒
-    };
 
     printfY("\n**********GAME ON!**********\n");
     nanosleep(&slp, NULL);
@@ -187,9 +188,12 @@ int main(int argc, char* argv[])
 
         // 展示庄家的手牌
         printfB("\nNow dealer's cards are: ");
+        nanosleep(&shortSlp, NULL);
         for (int i = 0; i < status.dealer.cards.cards_len; i++) {
-            nanosleep(&shortSlp, NULL);
             printf("%s%s ", COLORSET[(i + 1) % 4], status.dealer.cards.cards_val[i].face);
+            // 确保输出立即显示
+            fflush(stdout);
+            nanosleep(&shortSlp, NULL);
         }
         printf("%s\n", reset);
         nanosleep(&slp, NULL);
@@ -205,10 +209,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    printfY("\nDealer's turn is over!\n");
-
     // 玩家和庄家点数均未超过21
     if (!gameIsOver) {
+        printfY("\nDealer's turn is over!\n");
+        nanosleep(&slp, NULL);
         printfY("\n**********COMPARE POINTS**********\n");
         nanosleep(&slp, NULL);
         printfY("\n  Your points:     %d\n", status.currentPointsOfPlayer);
@@ -242,8 +246,13 @@ char* _2Lower(char* str)
 void showCards(Player player)
 {
     printfG("\nNow your cards are: ");
-    for (int i = 0; i < player.cards.cards_len; i++)
+    nanosleep(&slp, NULL);
+    for (int i = 0; i < player.cards.cards_len; i++) {
         printf("%s%s ", COLORSET[(i + 1) % 4], player.cards.cards_val[i].face);
+        // 确保输出立即显示
+        fflush(stdout);
+        nanosleep(&shortSlp, NULL);
+    }
     printf("\n%s", reset);
 }
 
