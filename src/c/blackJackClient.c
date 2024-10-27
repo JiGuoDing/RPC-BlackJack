@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     free(clnt);
     // free(statusPtr);
     nanosleep(&slp, NULL);
-    printfY("\n**********GAME OVER!**********\n");
+    printfY("\n**********GAME OVER!**********\n\n");
 
     return 0;
 }

@@ -13,3 +13,10 @@ $ ./src/bin/server.o
 # 另一个终端（服务器地址在本地）
 $ ./src/bin/client.o localhost 
 ```
+
+***需要的一些库***
+
+1. libtirpc-dev
+2. rpcsvc-proto
+3. rpcbind
+4. libc-dev-bin
