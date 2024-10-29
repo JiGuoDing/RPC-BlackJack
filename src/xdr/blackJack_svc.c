@@ -166,6 +166,9 @@ GameStatus* startgame_1_svc(void* any, struct svc_req* rep)
 // 发一张牌
 GameStatus* hitonecard_1_svc(HitRequest* hreq, struct svc_req* req)
 {
+    // 将客户端的更新传递到服务器
+    if (gameStatus.currentPointsOfPlayer != hreq->gameStatus->currentPointsOfPlayer)
+        gameStatus.currentPointsOfPlayer = hreq->gameStatus->currentPointsOfPlayer;
     OneMoreCard(&gameStatus, hreq->id);
     switch (hreq->id) {
     case 0: {

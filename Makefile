@@ -2,8 +2,8 @@
 
 CC = gcc
 # CFLAGS = -g -fsanitize=address # 内存调试用
-LDFLAGS = -lrt -ltirpc # 在ubuntu22及以上使用
-# LDFLAGS = -lnsl # 在ubuntu20下使用
+# LDFLAGS = -lrt -ltirpc # 在ubuntu22及以上使用
+LDFLAGS = -lnsl # 在ubuntu20下使用
 CLIENT_SRC = ./src/xdr/blackJack_clnt.c ./src/c/blackJackClient.c ./src/xdr/blackJack_xdr.c
 SERVER_SRC = ./src/xdr/blackJack_svc.c ./src/xdr/blackJack_xdr.c
 BIN_DIR = ./src/bin

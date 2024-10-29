@@ -157,10 +157,23 @@ int main(int argc, char* argv[])
     if (!gameIsOver) {
         printfY("\nYour turn is over!\n");
         nanosleep(&slp, NULL);
+        // 如果玩家的手牌里有A，此时进行判断
+        for (int i = 0; i < status.player.cards.cards_len; i++) {
+            if (strcmp(status.player.cards.cards_val[i].face, "A") == 0) {
+                // 这张手牌是A，且看成11点也不爆点数，则视为11点
+                if (status.currentPointsOfPlayer + 10 <= 21) {
+                    printf("\n置换一张A的点数为11\n");
+                    status.currentPointsOfPlayer += 10;
+                    status.player.cards.cards_val[i].point = 11;
+                    // printf("\n%d\n", status.player.cards.cards_val[i].point);
+                }
+            }
+        }
         printfY("\nNow it's dealer's turn!\n");
         nanosleep(&slp, NULL);
         printfB("\ndealer's another card is: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
         nanosleep(&slp, NULL);
+        // 发牌请求身份转为庄家
         hreq.gameStatus = &status;
         hreq.id = 0;
     }
@@ -180,10 +193,81 @@ int main(int argc, char* argv[])
             status = *statusPtr;
             printfB("\ndealer hit a new card: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
             nanosleep(&slp, NULL);
-        } else if (status.currentPointsOfDealer >= 17 && status.currentPointsOfDealer <= 21) {
-            // TODO 庄家的逻辑
+        } else if (status.currentPointsOfDealer >= 17 && status.currentPointsOfDealer <= 18) {
+            if (status.currentPointsOfPlayer < 17)
+                break;
+            // 庄家手牌为17-18点
+            bool_t needToHit = TRUE;
+            switch (status.currentPointsOfPlayer) {
+            // 根据玩家的点数做决策
+            case 17:
+            case 18: {
+                // 庄家比玩家的点数大，不需要发牌
+                if (status.currentPointsOfDealer > status.currentPointsOfPlayer)
+                    needToHit = FALSE;
+            }
+            case 19:
+            case 20:
+            case 21: {
+                if (needToHit) {
+                    statusPtr = hitonecard_1(&hreq, clnt);
+                    if (statusPtr == NULL) {
+                        printfR("\nSERVER ERROR! failed to hit new card.\n");
+                        nanosleep(&slp, NULL);
+                        gameIsOver = TRUE;
+                        // 服务器崩溃，游戏结束
+                        break;
+                    }
+                    status = *statusPtr;
+                    printfB("\ndealer hit a new card: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
+                    nanosleep(&slp, NULL);
+                }
+            }
+            default:
+                break;
+            }
+            printf("\n%d\n", needToHit);
+            if (!needToHit)
+                break;
+        } else if (status.currentPointsOfDealer >= 19 && status.currentPointsOfDealer <= 20) {
+            if (status.currentPointsOfPlayer < 17)
+                break;
+            // 庄家手牌为19-20点
+            bool_t needToHit = TRUE;
+            switch (status.currentPointsOfPlayer) {
+            // 根据玩家的点数做决策
+            case 17:
+            case 18:
+            case 19:
+            case 20: {
+                // 庄家比玩家的点数大，不需要发牌
+                if (status.currentPointsOfDealer > status.currentPointsOfPlayer)
+                    needToHit = FALSE;
+            }
+            case 21: {
+                if (needToHit) {
+                    statusPtr = hitonecard_1(&hreq, clnt);
+                    if (statusPtr == NULL) {
+                        printfR("\nSERVER ERROR! failed to hit new card.\n");
+                        nanosleep(&slp, NULL);
+                        gameIsOver = TRUE;
+                        // 服务器崩溃，游戏结束
+                        break;
+                    }
+                    status = *statusPtr;
+                    printfB("\ndealer hit a new card: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
+                    nanosleep(&slp, NULL);
+                }
+            }
+            default:
+                break;
+            }
+            printf("\n%d\n", needToHit);
+            if (!needToHit)
+                break;
+        } else if (status.currentPointsOfDealer == 21) {
+            // 庄家手牌为21点
             break;
-        } else {
         }
 
         // 展示庄家的手牌
@@ -198,7 +282,7 @@ int main(int argc, char* argv[])
         printf("%s\n", reset);
         nanosleep(&slp, NULL);
 
-        // 玩家手牌点数大于21，玩家输
+        // 庄家手牌点数大于21，玩家输
         if (status.currentPointsOfDealer > 21) {
             gameIsOver = TRUE;
             printfY("\nDealer busts with points of: %d\n", status.currentPointsOfDealer);
@@ -232,6 +316,7 @@ int main(int argc, char* argv[])
     // free(statusPtr);
     nanosleep(&slp, NULL);
     printfY("\n**********GAME OVER!**********\n\n");
+    nanosleep(&shortSlp, NULL);
 
     return 0;
 }
