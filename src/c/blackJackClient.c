@@ -173,6 +173,17 @@ int main(int argc, char* argv[])
         nanosleep(&slp, NULL);
         printfB("\ndealer's another card is: %s\n", status.dealer.cards.cards_val[status.dealer.cards.cards_len - 1].face);
         nanosleep(&slp, NULL);
+        // 展示庄家的手牌
+        printfB("\nNow dealer's cards are: ");
+        nanosleep(&shortSlp, NULL);
+        for (int i = 0; i < status.dealer.cards.cards_len; i++) {
+            printf("%s%s ", COLORSET[(i + 1) % 4], status.dealer.cards.cards_val[i].face);
+            // 确保输出立即显示
+            fflush(stdout);
+            nanosleep(&shortSlp, NULL);
+        }
+        printf("%s\n", reset);
+        nanosleep(&slp, NULL);
         // 发牌请求身份转为庄家
         hreq.gameStatus = &status;
         hreq.id = 0;
@@ -226,7 +237,6 @@ int main(int argc, char* argv[])
             default:
                 break;
             }
-            printf("\n%d\n", needToHit);
             if (!needToHit)
                 break;
         } else if (status.currentPointsOfDealer >= 19 && status.currentPointsOfDealer <= 20) {
@@ -262,7 +272,6 @@ int main(int argc, char* argv[])
             default:
                 break;
             }
-            printf("\n%d\n", needToHit);
             if (!needToHit)
                 break;
         } else if (status.currentPointsOfDealer == 21) {
