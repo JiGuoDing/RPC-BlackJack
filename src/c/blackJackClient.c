@@ -149,7 +149,6 @@ int main(int argc, char* argv[])
             printfY("\nYou bust with points of: %d\n", status.currentPointsOfPlayer);
             nanosleep(&slp, NULL);
             printfY("\nYou have *LOST* the game\n");
-            nanosleep(&slp, NULL);
             break;
         }
     }
@@ -297,7 +296,6 @@ int main(int argc, char* argv[])
             printfY("\nDealer busts with points of: %d\n", status.currentPointsOfDealer);
             nanosleep(&slp, NULL);
             printfY("\nYou have *WON* the game with points of %d\n", status.currentPointsOfPlayer);
-            nanosleep(&slp, NULL);
             break;
         }
     }
